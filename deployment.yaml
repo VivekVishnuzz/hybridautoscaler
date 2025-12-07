@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reactive-autoscaler
+  namespace: default
+  labels:
+    app: reactive-autoscaler
+spec:
+  replicas: 1  # Only need one instance
+  selector:
+    matchLabels:
+      app: reactive-autoscaler
+  template:
+    metadata:
+      labels:
+        app: reactive-autoscaler
+    spec:
+      serviceAccountName: autoscaler
+      containers:
+        - name: autoscaler
+          image: reactive-autoscaler:v1
+          imagePullPolicy: Never
+          env:
+            - name: PROMETHEUS_URL
+              value: "http://prometheus-server:80"
+            - name: KUBERNETES_NAMESPACE
+              value: "default"
+            - name: LOG_LEVEL
+              value: "INFO"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+      volumes:
+        - name: config
+          configMap:
+            name: autoscaler-config
